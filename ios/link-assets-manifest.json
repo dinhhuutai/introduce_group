@@ -1,0 +1,25 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/raleway.bold.ttf",
+      "sha1": "b887eb952d1891535389db7d1d1c127d1734bd97"
+    },
+    {
+      "path": "assets/fonts/raleway.medium.ttf",
+      "sha1": "6d7bd481efb4e28b13310d8f599f1a8a67b3fa87"
+    },
+    {
+      "path": "assets/fonts/raleway.regular.ttf",
+      "sha1": "f7c22a60e4bbae4e0b673de414108ec1a5a50edf"
+    },
+    {
+      "path": "assets/fonts/raleway.semibold.ttf",
+      "sha1": "68b768cec3815e7d4639d5f0dec54aeff913de53"
+    },
+    {
+      "path": "assets/fonts/raleway.thin.ttf",
+      "sha1": "627bf8be5fb4fa704e13562b401ffd6b07d8696c"
+    }
+  ]
+}
