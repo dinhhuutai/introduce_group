@@ -1,4 +1,11 @@
-import {View, Text, StatusBar, Image, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  StatusBar,
+  Image,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {
   ButtonComponent,
@@ -21,13 +28,28 @@ import {searchSelector} from '../../redux/reducers/searchReducer';
 import {userSelector} from '../../redux/reducers/userReducer';
 import {addPhone, bookingSelector} from '../../redux/reducers/bookingReducer';
 import Fontisto from 'react-native-vector-icons/Fontisto';
+import paymentAPI from '../../apis/paymentApi';
+import paypalApi from '../../apis/paypalApi';
+import WebView from 'react-native-webview';
+import queryString from 'query-string';
+import bookingAPI from '../../apis/bookingApi';
+import {LoadingModal} from '../../modals';
+import notiAPI from '../../apis/notiApi';
+import {changeMyBooking} from '../../redux/reducers/myBookingReducer';
+import {changeNotification} from '../../redux/reducers/notificationReducer';
 
 const BookingScreen = ({navigation}) => {
   const [dataRoom, setDataRoom] = useState();
   const [price, setPrice] = useState();
+  const [isLoading, setLoading] = useState(false);
+  const [paypalUrl, setPaypalUrl] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
 
   const route = useRoute();
   const {id} = route.params;
+
+  const dispatch = useDispatch();
 
   const search = useSelector(searchSelector);
   const user = useSelector(userSelector);
@@ -59,37 +81,265 @@ const BookingScreen = ({navigation}) => {
   };
 
   const handleBooking = async () => {
-    const data = {
-      idUser: user._id,
-      checkIn: new Date(
-        search?.searchDate?.startDate.y,
-        search?.searchDate?.startDate.m - 1,
-        search?.searchDate?.startDate.d,
-        14,
-        0,
-        0,
-      ),
-      checkOut: new Date(
-        search?.searchDate?.endDate.y,
-        search?.searchDate?.endDate.m - 1,
-        search?.searchDate?.endDate.d,
-        12,
-        0,
-        0,
-      ),
-      phone: booking.phone,
-      price,
-      idHotel: dataRoom.idHotel._id,
-      idRoom: dataRoom._id,
-      methodPaymennt: booking.methodPaymennt,
-      people: {
-        adult: search.searchQuantityPerson.adult,
-        kid: search.searchQuantityPerson.kid,
+    setLoading(true);
+    try {
+      if (booking.methodPayment === 'hotel') {
+        const data = {
+          idUser: user._id,
+          checkIn: new Date(
+            search?.searchDate?.startDate.y,
+            search?.searchDate?.startDate.m - 1,
+            search?.searchDate?.startDate.d,
+            14,
+            0,
+            0,
+          ),
+          checkOut: new Date(
+            search?.searchDate?.endDate.y,
+            search?.searchDate?.endDate.m - 1,
+            search?.searchDate?.endDate.d,
+            12,
+            0,
+            0,
+          ),
+          phone: booking.phone,
+          price,
+          idHotel: dataRoom.idHotel._id,
+          idRoom: dataRoom._id,
+          methodPayment: booking.methodPayment,
+          people: {
+            adult: search.searchQuantityPerson.adult,
+            kid: search.searchQuantityPerson.kid,
+          },
+          isPaid: false,
+          status: 1,
+          statusContent: '',
+        };
+        console.log(data);
+
+        const resBooking = await bookingAPI.HandleBooking(
+          '/create',
+          data,
+          'post',
+        );
+
+        if (resBooking.success) {
+          const dataNoti = {
+            status: 0,
+            idUser: user._id,
+            statusNotice: 1,
+            statusBooking: 1,
+            nameHotel: dataRoom?.idHotel?.name,
+          };
+          await notiAPI.HandleNoti(`/create`, dataNoti, 'post');
+
+          dispatch(changeMyBooking(resBooking.data));
+
+          clearPaypalState();
+          setLoading(false);
+          navigation.navigate('BookingSuccessScreen', {
+            booking: {
+              name: dataRoom?.idHotel?.name,
+              address: `${dataRoom?.idHotel?.district?.name}, ${dataRoom?.idHotel?.province?.name}`,
+              numNight: `${distanceTwoDay(
+                search?.searchDate?.startDate.d,
+                search?.searchDate?.startDate.m,
+                search?.searchDate?.startDate.y,
+                search?.searchDate?.endDate.d,
+                search?.searchDate?.endDate.m,
+                search?.searchDate?.endDate.y,
+              )}`,
+              price: price,
+            },
+          });
+        }
+      } else if (booking.methodPayment === 'paypal') {
+        handleBookingPaypal();
+      } else {
+        navigation.navigate('BookingCancelScreen', {
+          methodPayment: booking.methodPayment,
+        });
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
+
+  const handleBookingPaypal = async () => {
+    setLoading(true);
+
+    let orderDetail = {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          items: [
+            {
+              name: `${dataRoom?.idHotel?.name}`,
+              quantity: '1',
+              unit_amount: {
+                currency_code: 'USD',
+                value: `${price}.00`,
+              },
+            },
+          ],
+          amount: {
+            currency_code: 'USD',
+            value: `${price}.00`,
+            breakdown: {
+              item_total: {
+                currency_code: 'USD',
+                value: `${price}.00`,
+              },
+            },
+          },
+        },
+      ],
+      application_context: {
+        return_url: 'https://example.com/return',
+        cancel_url: 'https://example.com/cancel',
       },
     };
 
-    console.log(data);
-    navigation.navigate('BookingSuccessScreen');
+    try {
+      const token = await paypalApi.generateToken();
+      const res = await paypalApi.createOrder(token, orderDetail);
+
+      console.log('res++++++', res);
+      setAccessToken(token);
+      setLoading(false);
+      if (!!res?.links) {
+        const findUrl = res.links.find(data => data?.rel == 'approve');
+        setPaypalUrl(findUrl.href);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.log('error', error);
+      clearPaypalState();
+      navigation.navigate('BookingCancelScreen', {
+        methodPayment: booking.methodPayment,
+      });
+    }
+  };
+
+  const onUrlChange = webviewState => {
+    console.log('webviewStatewebviewState', webviewState);
+    if (webviewState.url.includes('https://example.com/cancel')) {
+      console.log('12345678');
+      clearPaypalState();
+      navigation.navigate('BookingCancelScreen', {
+        methodPayment: booking.methodPayment,
+      });
+      return;
+    }
+    if (webviewState.url.includes('https://example.com/return')) {
+      if (!webViewLoaded) {
+        setWebViewLoaded(true);
+        return;
+      }
+
+      const urlValues = queryString.parseUrl(webviewState.url);
+      console.log('my urls value', urlValues);
+      const {token} = urlValues.query;
+      if (!!token) {
+        paymentSucess(token);
+      }
+    }
+  };
+
+  const paymentSucess = async id => {
+    console.log('payment');
+    setLoading(true);
+    try {
+      const res = await paypalApi.capturePayment(id, accessToken);
+      console.log('capturePayment res++++', res);
+
+      const data = {
+        idUser: user._id,
+        checkIn: new Date(
+          search?.searchDate?.startDate.y,
+          search?.searchDate?.startDate.m - 1,
+          search?.searchDate?.startDate.d,
+          14,
+          0,
+          0,
+        ),
+        checkOut: new Date(
+          search?.searchDate?.endDate.y,
+          search?.searchDate?.endDate.m - 1,
+          search?.searchDate?.endDate.d,
+          12,
+          0,
+          0,
+        ),
+        phone: booking.phone,
+        price,
+        idHotel: dataRoom.idHotel._id,
+        idRoom: dataRoom._id,
+        methodPayment: booking.methodPayment,
+        people: {
+          adult: search.searchQuantityPerson.adult,
+          kid: search.searchQuantityPerson.kid,
+        },
+        isPaid: true,
+        status: 1,
+        statusContent: '',
+      };
+      console.log(data);
+
+      const resBooking = await bookingAPI.HandleBooking(
+        '/create',
+        data,
+        'post',
+      );
+
+      console.log(resBooking);
+
+      if (resBooking.success) {
+        const dataNoti = {
+          status: 0,
+          idUser: user._id,
+          statusNotice: 1,
+          statusBooking: 1,
+          nameHotel: dataRoom?.idHotel?.name,
+        };
+        const resNoti = await notiAPI.HandleNoti(`/create`, dataNoti, 'post');
+
+        dispatch(changeNotification(resNoti.data));
+        console.log(resNoti.data);
+
+        clearPaypalState();
+        setLoading(false);
+        navigation.navigate('BookingSuccessScreen', {
+          booking: {
+            name: dataRoom?.idHotel?.name,
+            address: `${dataRoom?.idHotel?.district?.name}, ${dataRoom?.idHotel?.province?.name}`,
+            numNight: `${distanceTwoDay(
+              search?.searchDate?.startDate.d,
+              search?.searchDate?.startDate.m,
+              search?.searchDate?.startDate.y,
+              search?.searchDate?.endDate.d,
+              search?.searchDate?.endDate.m,
+              search?.searchDate?.endDate.y,
+            )}`,
+            price: price,
+          },
+        });
+      }
+    } catch (error) {
+      setLoading(false);
+      console.log('error raised in payment capture', error);
+      clearPaypalState();
+      navigation.navigate('BookingCancelScreen', {
+        methodPayment: booking.methodPayment,
+      });
+    }
+  };
+
+  const clearPaypalState = () => {
+    setPaypalUrl(null);
+    setAccessToken(null);
   };
 
   return (
@@ -328,17 +578,15 @@ const BookingScreen = ({navigation}) => {
           <TouchableOpacity
             onPress={() => navigation.navigate('PaymentScreen')}>
             <TextComponent
-              text={booking?.methodPaymennt ? 'Thay đổi' : 'Chọn phương thức'}
+              text={booking?.methodPayment ? 'Thay đổi' : 'Chọn phương thức'}
               size={14}
               font={fontFamilies.semiBold}
-              color={
-                booking?.methodPaymennt ? appColors.primary : appColors.red
-              }
+              color={booking?.methodPayment ? appColors.primary : appColors.red}
             />
           </TouchableOpacity>
         </RowComponent>
 
-        {booking?.methodPaymennt && (
+        {booking?.methodPayment && (
           <View
             style={{
               flexDirection: 'row',
@@ -346,14 +594,14 @@ const BookingScreen = ({navigation}) => {
               alignItems: 'center',
               marginTop: 20,
             }}>
-            {booking?.methodPaymennt !== 'hotel' && (
+            {booking?.methodPayment !== 'hotel' && (
               <Octicons name="credit-card" size={22} color={appColors.text} />
             )}
-            {booking?.methodPaymennt == 'hotel' ? (
+            {booking?.methodPayment == 'hotel' ? (
               <Fontisto name="hotel" size={20} color={appColors.primary1} />
-            ) : booking?.methodPaymennt == 'mastercard' ? (
+            ) : booking?.methodPayment == 'mastercard' ? (
               <Mastercard style={{marginLeft: 12}} />
-            ) : booking?.methodPaymennt == 'paypal' ? (
+            ) : booking?.methodPayment == 'paypal' ? (
               <Paypal style={{marginLeft: 12}} />
             ) : (
               <Visa style={{marginLeft: 12}} />
@@ -361,9 +609,9 @@ const BookingScreen = ({navigation}) => {
 
             <TextComponent
               text={
-                booking?.methodPaymennt == 'hotel'
+                booking?.methodPayment == 'hotel'
                   ? 'Thanh toán tại khách sạn'
-                  : booking?.methodPaymennt
+                  : booking?.methodPayment
               }
               font={fontFamilies.semiBold}
               size={14}
@@ -450,6 +698,20 @@ const BookingScreen = ({navigation}) => {
           type="primary"
           text="Pay"></ButtonComponent>
       </SectionComponent>
+
+      {isLoading && <LoadingModal />}
+
+      <Modal visible={!!paypalUrl}>
+        <TouchableOpacity onPress={clearPaypalState} style={{margin: 24}}>
+          <Text>Closed</Text>
+        </TouchableOpacity>
+        <View style={{flex: 1}}>
+          <WebView
+            source={{uri: paypalUrl}}
+            onNavigationStateChange={onUrlChange}
+          />
+        </View>
+      </Modal>
     </ContainerComponent>
   );
 };

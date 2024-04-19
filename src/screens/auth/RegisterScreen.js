@@ -27,6 +27,7 @@ const initValue = {
   email: '',
   password: '',
   confirmPassword: '',
+  role: 3,
 };
 
 const RegisterScreen = ({navigation}) => {

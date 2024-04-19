@@ -24,7 +24,15 @@ const AppRouters = () => {
     }
   };
 
-  return <>{auth && auth?.accessToken ? <MainNavigator /> : <AuthNavigator />}</>;
+  return (
+    <>
+      {auth && auth?.accessToken && auth?.role === 3 ? (
+        <MainNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
+    </>
+  );
 };
 
 export default AppRouters;

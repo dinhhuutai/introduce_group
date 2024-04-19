@@ -32,6 +32,7 @@ import SearchNameHotelScreen from './searchNameHotelScreen/SearchNameHotelScreen
 import BookingSuccessScreen from './bookingSuccess/BookingSuccessScreen';
 import MyBookingScreen from './tabBottom/myBooking/MyBookingScreen';
 import DetailBookingScreen from './detailBooking/DetailBookingScreen';
+import BookingCancelScreen from './bookingCancel/BookingCancelScreen';
 
 export {
   HomeScreen,
@@ -67,4 +68,5 @@ export {
   BookingSuccessScreen,
   MyBookingScreen,
   DetailBookingScreen,
+  BookingCancelScreen,
 };

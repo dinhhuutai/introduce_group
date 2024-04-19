@@ -68,7 +68,6 @@ const ListRoomScreen = ({navigation}) => {
     }
   }, []);
 
-
   useEffect(() => {
     setPage(0);
     getData();
@@ -111,6 +110,8 @@ const ListRoomScreen = ({navigation}) => {
       dataSearch,
       'post',
     );
+
+    console.log('list room: ', res.data);
 
     setData(res.data);
     setPage(prevPage => prevPage + 1);

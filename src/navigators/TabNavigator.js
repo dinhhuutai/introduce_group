@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import {View, Text, StyleSheet} from 'react-native';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {
   HistoryScreen,
@@ -15,10 +15,21 @@ import {globalStyles} from '../styles/globalStyles';
 import Octicons from 'react-native-vector-icons/Octicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {appColors} from '../constants/appColors';
+import {useDispatch, useSelector} from 'react-redux';
 import {fontFamilies} from '../constants/fontFamilies';
+import {notificationSelector} from '../redux/reducers/notificationReducer';
 
 const TabNavigator = () => {
   const Tab = createBottomTabNavigator();
+  const [noti, setNoti] = useState(0);
+
+  const notification = useSelector(notificationSelector);
+  console.log('notification: ', notification);
+
+  useEffect(() => {
+    setNoti(notification);
+  }, [notification]);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -152,6 +163,28 @@ const TabNavigator = () => {
                 size={24}
                 color={focused ? appColors.white : appColors.gray1}
               />
+              {noti > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -10,
+                    right: -10,
+                    backgroundColor: appColors.red,
+                    width: 24,
+                    height: 24,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    fontSize: 10,
+                    borderRadius: 50,
+                  }}>
+                  <Text
+                    style={{
+                      color: appColors.white,
+                    }}>
+                    {noti < 10 ? noti : '9+'}
+                  </Text>
+                </View>
+              )}
               {focused && (
                 <Text
                   style={{

@@ -31,7 +31,13 @@ const Card = ({data}) => {
         {data?.title}
       </Text>
 
-      <Text style={{position: 'absolute', marginTop: 50, marginLeft: 80}}>
+      <Text
+        style={{
+          position: 'absolute',
+          marginTop: 48,
+          marginLeft: 80,
+          lineHeight: 20,
+        }}>
         {data?.content}
       </Text>
     </View>

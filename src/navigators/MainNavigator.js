@@ -23,6 +23,7 @@ import {
   BookingSuccessScreen,
   HomeScreen,
   DetailBookingScreen,
+  BookingCancelScreen,
 } from '../screens';
 
 const MainNavigator = () => {
@@ -33,7 +34,14 @@ const MainNavigator = () => {
         headerShown: false,
       }}>
       <Stack.Screen name="Main" component={TabNavigator} />
-      <Stack.Screen name="DetailBookingScreen" component={DetailBookingScreen} />
+      <Stack.Screen
+        name="BookingCancelScreen"
+        component={BookingCancelScreen}
+      />
+      <Stack.Screen
+        name="DetailBookingScreen"
+        component={DetailBookingScreen}
+      />
       <Stack.Screen
         name="BookingSuccessScreen"
         component={BookingSuccessScreen}

@@ -17,119 +17,39 @@ import {
 import Card from './components/Card';
 import {appColors} from '../../../constants/appColors';
 import ModalCancelBooking from './components/ModalCancelBooking';
-
-const dataRes = [
-  {
-    _id: 1,
-    idHotel: {
-      _id: 1,
-      image: require('../../../assets/images/hotel-1.png'),
-      name: 'The pearls',
-      province: {
-        name: 'Tp.Hồ Chí Minh',
-      },
-      district: {
-        name: 'Quận 1',
-      },
-    },
-    idRoom: {
-      price: 500,
-    },
-    status: 1,
-  },
-  {
-    _id: 2,
-    idHotel: {
-      _id: 1,
-      image: require('../../../assets/images/hotel-1.png'),
-      name: 'The pearls 2',
-      province: {
-        name: 'Tp.Hồ Chí Minh',
-      },
-      district: {
-        name: 'Quận 2',
-      },
-    },
-    idRoom: {
-      price: 750,
-    },
-    status: 2,
-  },
-  {
-    _id: 3,
-    idHotel: {
-      _id: 1,
-      image: require('../../../assets/images/hotel-1.png'),
-      name: 'The pearls 3',
-      province: {
-        name: 'Tp.Hồ Chí Minh',
-      },
-      district: {
-        name: 'Quận 3',
-      },
-    },
-    idRoom: {
-      price: 700,
-    },
-    status: 3,
-  },
-  {
-    _id: 4,
-    idHotel: {
-      _id: 1,
-      image: require('../../../assets/images/hotel-1.png'),
-      name: 'The pearls 3',
-      province: {
-        name: 'Tp.Hồ Chí Minh',
-      },
-      district: {
-        name: 'Quận 3',
-      },
-    },
-    idRoom: {
-      price: 700,
-    },
-    status: 1,
-  },
-  {
-    _id: 5,
-    idHotel: {
-      _id: 1,
-      image: require('../../../assets/images/hotel-1.png'),
-      name: 'The pearls 3',
-      province: {
-        name: 'Tp.Hồ Chí Minh',
-      },
-      district: {
-        name: 'Quận 3',
-      },
-    },
-    idRoom: {
-      price: 700,
-    },
-    status: 3,
-  },
-];
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import bookingAPI from '../../../apis/bookingApi';
+import {useDispatch, useSelector} from 'react-redux';
+import {myBookingSelector} from '../../../redux/reducers/myBookingReducer';
 
 const MyBookingScreen = () => {
+  const {getItem} = useAsyncStorage('auth');
   const [data, setData] = useState([]);
   const [select, setSelect] = useState('active');
   const [isModal, setIsModal] = useState(false);
+  const [idBookingCancel, setIdBookingCancel] = useState('');
+
+  const myBooking = useSelector(myBookingSelector);
 
   useEffect(() => {
     getData();
-  }, [select]);
+  }, [select, myBooking]);
 
   const getData = async () => {
-    let dataTemp;
-    if (select === 'active') {
-      dataTemp = dataRes.filter(d => d.status === 1);
-    } else if (select === 'completed') {
-      dataTemp = dataRes.filter(d => d.status === 2);
-    } else if (select === 'canceled') {
-      dataTemp = dataRes.filter(d => d.status === 3);
-    }
-    setData(dataTemp);
+    try {
+      const resUser = await getItem();
+      const userTemp = JSON.parse(resUser);
+      const res = await bookingAPI.HandleBooking(
+        `/getByIdUser/${userTemp._id}/${
+          select === 'active' ? 1 : select === 'completed' ? 2 : 3
+        }`,
+      );
+
+      if (res.success) {
+        console.log(res.data);
+        setData(res.data);
+      }
+    } catch (error) {}
   };
 
   return (
@@ -215,14 +135,26 @@ const MyBookingScreen = () => {
         <FlatList
           showsVerticalScrollIndicator={false}
           data={data}
-          renderItem={({item}) => <Card item={item} setIsModal={setIsModal} />}
+          renderItem={({item}) => (
+            <Card
+              setIdBookingCancel={setIdBookingCancel}
+              item={item}
+              setIsModal={setIsModal}
+            />
+          )}
           keyExtractor={item => item?._id?.toString()}
           onEndReached={getData}
           onEndReachedThreshold={0.5}
         />
       </SectionComponent>
 
-      {isModal && <ModalCancelBooking setIsModal={setIsModal} />}
+      {isModal && (
+        <ModalCancelBooking
+          idBookingCancel={idBookingCancel}
+          setIsModal={setIsModal}
+          setSelect={setSelect}
+        />
+      )}
     </ContainerComponent>
   );
 };

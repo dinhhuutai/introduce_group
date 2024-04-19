@@ -6,7 +6,7 @@ import {fontFamilies} from '../../../../constants/fontFamilies';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {useNavigation} from '@react-navigation/native';
 
-const Card = ({item, setIsModal}) => {
+const Card = ({item, setIsModal, setIdBookingCancel}) => {
   const navigation = useNavigation();
 
   return (
@@ -23,10 +23,16 @@ const Card = ({item, setIsModal}) => {
         },
       ]}>
       <View style={{flexDirection: 'row'}}>
-        <TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('DetailHotelScreen', {id: item?.idHotel._id})
+          }>
           <Image
             style={{height: 70, width: 140, borderRadius: 10}}
-            source={item?.idHotel.image}
+            source={
+              item?.idHotel.image ||
+              require('../../../../assets/images/hotel-1.png')
+            }
           />
         </TouchableOpacity>
 
@@ -52,7 +58,7 @@ const Card = ({item, setIsModal}) => {
             .replace(/,/g, '.')}.000đ/Night`}</Text>
         </View>
 
-        {item?.status !== 1 && (
+        {item?.status !== 1 && item?.status !== 4 && (
           <View>
             <AntDesign
               name={`${
@@ -69,7 +75,7 @@ const Card = ({item, setIsModal}) => {
         )}
       </View>
 
-      {item?.status === 1 ? (
+      {item?.status === 1 || item?.status === 4 ? (
         <View
           style={{
             flexDirection: 'row',
@@ -77,27 +83,47 @@ const Card = ({item, setIsModal}) => {
             justifyContent: 'space-between',
             marginTop: 20,
           }}>
-          <TouchableOpacity
-            onPress={() => setIsModal(true)}
-            style={{
-              minWidth: 110,
-              borderWidth: 1,
-              borderColor: appColors.primary1,
-              paddingVertical: 4,
-              alignItems: 'center',
-              borderRadius: 20,
-              backgroundColor: 'transparent',
-            }}>
-            <Text
+          {item?.status === 4 ? (
+            <View
               style={{
-                color: appColors.primary1,
+                width: 260,
+                borderWidth: 1,
+                borderColor: appColors.gray1,
+                paddingVertical: 5,
+                alignItems: 'center',
+                borderRadius: 20,
+                backgroundColor: appColors.gray1,
               }}>
-              Cancel
-            </Text>
-          </TouchableOpacity>
+              <Text style={{color: appColors.primary1}}>Booking successed</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setIsModal(true);
+                setIdBookingCancel(item?._id);
+              }}
+              style={{
+                minWidth: 110,
+                borderWidth: 1,
+                borderColor: appColors.primary1,
+                paddingVertical: 4,
+                alignItems: 'center',
+                borderRadius: 20,
+                backgroundColor: 'transparent',
+              }}>
+              <Text
+                style={{
+                  color: appColors.primary1,
+                }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('DetailBookingScreen')}
+            onPress={() =>
+              navigation.navigate('DetailBookingScreen', {id: item?._id})
+            }
             style={{
               minWidth: 110,
               borderWidth: 1,
@@ -120,7 +146,7 @@ const Card = ({item, setIsModal}) => {
           style={{
             flexDirection: 'row',
             paddingHorizontal: 10,
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             marginTop: 20,
           }}>
           <View
@@ -135,13 +161,33 @@ const Card = ({item, setIsModal}) => {
             }}>
             <Text style={{color: appColors.primary1}}>Booking Completed</Text>
           </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('DetailBookingScreen', {id: item?._id})
+            }
+            style={{
+              minWidth: 110,
+              borderWidth: 1,
+              borderColor: appColors.primary1,
+              paddingVertical: 4,
+              alignItems: 'center',
+              borderRadius: 20,
+              backgroundColor: appColors.primary1,
+            }}>
+            <Text
+              style={{
+                color: appColors.white,
+              }}>
+              View Booking
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View
           style={{
             flexDirection: 'row',
             paddingHorizontal: 10,
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             marginTop: 20,
           }}>
           <View
@@ -149,10 +195,29 @@ const Card = ({item, setIsModal}) => {
               paddingVertical: 5,
               alignItems: 'center',
             }}>
-            <Text style={{color: appColors.red1}}>
-              You canceled this hotel booking
-            </Text>
+            <Text style={{color: appColors.red1}}>{item?.statusContent}</Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('DetailBookingScreen', {id: item?._id})
+            }
+            style={{
+              minWidth: 110,
+              borderWidth: 1,
+              borderColor: appColors.primary1,
+              paddingVertical: 4,
+              alignItems: 'center',
+              borderRadius: 20,
+              backgroundColor: appColors.primary1,
+            }}>
+            <Text
+              style={{
+                color: appColors.white,
+              }}>
+              View Booking
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>

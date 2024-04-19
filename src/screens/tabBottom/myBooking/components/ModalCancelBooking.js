@@ -3,12 +3,46 @@ import React from 'react';
 import {appColors} from '../../../../constants/appColors';
 import {fontFamilies} from '../../../../constants/fontFamilies';
 import {useNavigation} from '@react-navigation/native';
+import bookingAPI from '../../../../apis/bookingApi';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import {useDispatch, useSelector} from 'react-redux';
+import notiAPI from '../../../../apis/notiApi';
+import {changeNotification} from '../../../../redux/reducers/notificationReducer';
 
-const ModalCancelBooking = ({setIsModal}) => {
+const ModalCancelBooking = ({setIsModal, idBookingCancel, setSelect}) => {
   const navigation = useNavigation();
+  const {getItem} = useAsyncStorage('auth');
+
+  const dispatch = useDispatch();
 
   const handleYes = async () => {
-    setIsModal(false);
+    console.log(idBookingCancel);
+
+    const res = await bookingAPI.HandleBooking(
+      `/cancel/${idBookingCancel}`,
+      {
+        statusContent: 'Bạn đã hủy đặt phòng',
+      },
+      'post',
+    );
+
+    if (res.success) {
+      const resUser = await getItem();
+      const userTemp = JSON.parse(resUser);
+      const dataNoti = {
+        status: 0,
+        idUser: userTemp._id,
+        statusNotice: 0,
+        statusBooking: 3,
+        nameHotel: res?.data?.idHotel?.name,
+      };
+      const resNoti = await notiAPI.HandleNoti(`/create`, dataNoti, 'post');
+
+      dispatch(changeNotification(resNoti.data));
+
+      setIsModal(false);
+      setSelect('canceled');
+    }
   };
 
   return (

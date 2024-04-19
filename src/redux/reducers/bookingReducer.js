@@ -5,7 +5,7 @@ const bookingSlice = createSlice({
   initialState: {
     bookingData: {
       phone: null,
-      methodPaymennt: null,
+      methodPayment: null,
     },
   },
   reducers: {
@@ -13,7 +13,7 @@ const bookingSlice = createSlice({
       state.bookingData.phone = action.payload;
     },
     addMethodPaymennt: (state, action) => {
-      state.bookingData.methodPaymennt = action.payload;
+      state.bookingData.methodPayment = action.payload;
     },
     removeBooking: (state, action) => {
       state.bookingData = null;

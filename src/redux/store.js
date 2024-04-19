@@ -4,6 +4,8 @@ import {searchReducer} from './reducers/searchReducer';
 import {listLikeReducer} from './reducers/listLikeReducer';
 import {userReducer} from './reducers/userReducer';
 import {bookingReducer} from './reducers/bookingReducer';
+import {myBookingReducer} from './reducers/myBookingReducer';
+import {notificationReducer} from './reducers/notificationReducer';
 
 const store = configureStore({
   reducer: {
@@ -12,6 +14,8 @@ const store = configureStore({
     listLikeReducer,
     userReducer,
     bookingReducer,
+    myBookingReducer,
+    notificationReducer,
   },
 });
 

@@ -1,5 +1,5 @@
 import {View, Text, StatusBar} from 'react-native';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   ContainerComponent,
   RowComponent,
@@ -11,36 +11,27 @@ import Octicons from 'react-native-vector-icons/Octicons';
 import {appColors} from '../../constants/appColors';
 import moment from 'moment';
 import {fontFamilies} from '../../constants/fontFamilies';
-
-const data = {
-  _id: '004Wf32QR',
-  idUser: {
-    name: 'Dinh Huu Tai',
-    phone: '0123456789',
-  },
-  checkIn: new Date(2024, 3, 1),
-  checkOut: new Date(2024, 3, 5),
-  idHotel: {
-    name: 'Hotel 1',
-    province: {
-      name: 'Tp.Hồ Chí Minh',
-    },
-    district: {
-      name: 'Quận 3',
-    },
-  },
-  idRoom: {
-    name: 'Room 1',
-  },
-  price: 700,
-  people: {
-    adult: 4,
-    kid: 2,
-  },
-  methodPaymennt: 1,
-};
+import bookingAPI from '../../apis/bookingApi';
+import {useNavigation, useRoute} from '@react-navigation/native';
 
 const DetailBookingScreen = () => {
+  const [data, setData] = useState();
+
+  const route = useRoute();
+  const {id} = route.params;
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    const res = await bookingAPI.HandleBooking(`/getById/${id}`);
+
+    if (res.success) {
+      setData(res.data);
+    }
+  };
+
   return (
     <ContainerComponent back title="Detail booking" isScroll>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" />
@@ -62,7 +53,7 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
             }}>
-            {data._id}
+            {data?.encodeId}
           </Text>
         </View>
         <SpaceComponent height={24} />
@@ -82,7 +73,7 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
             }}>
-            {data.idUser.name}
+            {data?.idUser.name}
           </Text>
         </View>
         <SpaceComponent height={24} />
@@ -102,7 +93,7 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
             }}>
-            {data.idUser.phone}
+            {data?.idUser.phone}
           </Text>
         </View>
         <SpaceComponent height={24} />
@@ -130,7 +121,7 @@ const DetailBookingScreen = () => {
                 fontFamily: fontFamilies.semiBold,
                 color: appColors.text1,
               }}>
-              {moment(data.checkIn).format('DD/MM/YYYY')}
+              {moment(data?.checkIn).format('DD/MM/YYYY')}
             </Text>
           </View>
 
@@ -154,7 +145,7 @@ const DetailBookingScreen = () => {
                 fontFamily: fontFamilies.semiBold,
                 color: appColors.text1,
               }}>
-              {moment(data.checkOut).format('DD/MM/YYYY').toString()}
+              {moment(data?.checkOut).format('DD/MM/YYYY').toString()}
             </Text>
           </View>
         </View>
@@ -175,7 +166,7 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
             }}>
-            {data.idHotel.name}
+            {data?.idHotel.name}
           </Text>
         </View>
         <SpaceComponent height={24} />
@@ -213,7 +204,7 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
             }}>
-            {data.idRoom.name}
+            {data?.idRoom.name}
           </Text>
         </View>
         <SpaceComponent height={24} />
@@ -230,11 +221,11 @@ const DetailBookingScreen = () => {
           <View>
             <RowComponent>
               <TextComponent
-                text={data.people.adult ? `${data.people.adult} adult` : ''}
+                text={data?.people.adult ? `${data?.people.adult} adult` : ''}
                 font={fontFamilies.medium}
                 size={14}
               />
-              {data.people.kid ? (
+              {data?.people.kid ? (
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
                   <Octicons
                     style={{marginHorizontal: 14}}
@@ -243,7 +234,7 @@ const DetailBookingScreen = () => {
                     color={appColors.text1}
                   />
                   <TextComponent
-                    text={`${data.people.kid} kid`}
+                    text={`${data?.people.kid} kid`}
                     font={fontFamilies.medium}
                     size={14}
                   />
@@ -263,14 +254,32 @@ const DetailBookingScreen = () => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text,
             }}>
-            Payment method
+            Thanh toán
           </Text>
           <Text
             style={{
               fontSize: 14,
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
-            }}>{`Thanh toán tại khách sạn`}</Text>
+            }}>{`${data?.methodPayment}`}</Text>
+        </View>
+        <SpaceComponent height={24} />
+
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontFamily: fontFamilies.semiBold,
+              color: appColors.text,
+            }}>
+            Tình trạng thanh toán
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: fontFamilies.semiBold,
+              color: appColors.text1,
+            }}>{`${data?.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}`}</Text>
         </View>
         <SpaceComponent height={24} />
 
@@ -288,9 +297,30 @@ const DetailBookingScreen = () => {
               fontSize: 16,
               fontFamily: fontFamilies.semiBold,
               color: appColors.text,
-            }}>{`${data.price
+            }}>{`${data?.price
             ?.toLocaleString('en-US')
             .replace(/,/g, '.')}.000đ`}</Text>
+        </View>
+
+        <SpaceComponent height={24} />
+
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontFamily: fontFamilies.semiBold,
+              color: appColors.text,
+            }}>
+            Tình trạng
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: fontFamilies.semiBold,
+              color: appColors.text1,
+            }}>
+            {data?.statusContent}
+          </Text>
         </View>
       </View>
     </ContainerComponent>

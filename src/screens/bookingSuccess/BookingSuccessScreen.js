@@ -1,5 +1,5 @@
 import {View, Text, Image} from 'react-native';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {fontFamilies} from '../../constants/fontFamilies';
 import {appColors} from '../../constants/appColors';
 import Octicons from 'react-native-vector-icons/Octicons';
@@ -8,15 +8,26 @@ import {
   SectionComponent,
   SpaceComponent,
 } from '../../components';
+import {useRoute} from '@react-navigation/native';
 
-const data = {
-  name: 'JW Marriott hotel',
-  address: 'New delhi',
-  numNight: 3,
-  price: 2400,
-};
+// const data = {
+//   name: 'JW Marriott hotel',
+//   address: 'New delhi',
+//   numNight: 3,
+//   price: 2400,
+// };
 
 const BookingSuccessScreen = ({navigation}) => {
+  const [data, setData] = useState();
+
+  const route = useRoute();
+  const {booking} = route.params;
+
+  useEffect(() => {
+    setData(booking);
+    console.log(booking);
+  }, [booking]);
+
   return (
     <View>
       <View style={{alignItems: 'center', marginTop: 80}}>
@@ -61,7 +72,7 @@ const BookingSuccessScreen = ({navigation}) => {
               fontFamily: fontFamilies.semiBold,
               color: appColors.text,
             }}>
-            {data.name}
+            {data?.name}
           </Text>
         </View>
         <View
@@ -81,7 +92,7 @@ const BookingSuccessScreen = ({navigation}) => {
                 fontFamily: fontFamilies.semiBold,
                 color: appColors.text1,
               }}>
-              {data.address}
+              {data?.address}
             </Text>
           </View>
           <Octicons
@@ -95,7 +106,7 @@ const BookingSuccessScreen = ({navigation}) => {
               fontSize: 15,
               fontFamily: fontFamilies.semiBold,
               color: appColors.text1,
-            }}>{`${data.numNight} Nights`}</Text>
+            }}>{`${data?.numNight} Nights`}</Text>
         </View>
 
         <View
@@ -137,7 +148,7 @@ const BookingSuccessScreen = ({navigation}) => {
                 fontSize: 14,
                 fontFamily: fontFamilies.semiBold,
                 color: appColors.text,
-              }}>{`${data.price
+              }}>{`${data?.price
               ?.toLocaleString('en-US')
               .replace(/,/g, '.')}.000đ`}</Text>
           </View>
@@ -171,9 +182,10 @@ const BookingSuccessScreen = ({navigation}) => {
               fontSize: 16,
               fontFamily: fontFamilies.semiBold,
               color: appColors.text,
-            }}>{`${data.price
-            ?.toLocaleString('en-US')
-            .replace(/,/g, '.')}.000đ`}</Text>
+            }}>{`${
+            data?.price &&
+            data?.price?.toLocaleString('en-US').replace(/,/g, '.')
+          }.000đ`}</Text>
         </View>
       </View>
 
